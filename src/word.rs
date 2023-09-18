@@ -2,6 +2,7 @@ use std::array;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::ops::Index;
+use std::path::Path;
 
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
@@ -33,6 +34,16 @@ pub enum Test {
 impl Word {
     pub fn new(word: [char; 5]) -> Word {
         Word { word }
+    }
+
+    pub fn list_from_file(p: impl AsRef<Path>) -> Vec<Word> {
+        let f = std::fs::read_to_string(p).unwrap();
+        let mut list: Vec<Word> = Vec::new();
+        for line in f.lines() {
+            let word = Word::new(line.chars().collect::<Vec<char>>().try_into().unwrap());
+            list.push(word)
+        }
+        list
     }
 
     pub fn counts(&self) -> HashMap<char, u8> {

@@ -1,10 +1,11 @@
 mod word;
 mod solver;
+mod solvers;
 
 use std::io;
 use std::io::{stdin, Write};
-use std::thread::available_parallelism;
 use crate::solver::WordleGuesser;
+use crate::solvers::{Solver, SolverV1, SolverV2, SolverV3};
 use crate::word::{Test, Word};
 
 fn get_input() -> String {
@@ -13,69 +14,26 @@ fn get_input() -> String {
     string
 }
 
-fn test_algo(mut f: impl FnMut(WordleGuesser, Word) -> usize, n: usize) {
-    let mut guesser = WordleGuesser::from_words_file("src/all_words.txt");
-
-    let all_words = guesser.get_possible().to_vec();
+fn test_solver<S: Solver>(solver_fn: impl Fn() -> S, all_words: impl Iterator<Item=Word>) {
+    let (lower, upper) = all_words.size_hint();
+    let len = upper.unwrap_or(lower);
 
     let mut total: usize = 0;
-    let mut len = (0..all_words.len()).step_by(n).count();
-    for (i, word) in all_words.iter().enumerate().step_by(n) {
-        total += f(guesser.clone(), *word);
-        print!("\rCompleted {i}/{}", len * n);
+    for (i, word) in all_words.enumerate() {
+        total += solver_fn().play(word);
+        print!("\rCompleted {}/{}", i + 1, len);
         io::stdout().flush().unwrap();
     }
     let avg = total as f64 / len as f64;
     println!("\navg guesses {}", avg);
 }
 
-fn algo_v1(mut guesser: WordleGuesser, real_word: Word) -> usize {
-    let mut i = 0;
-    loop {
-        i += 1;
-        let Some(&guess) = guesser.get_possible().first() else { break };
-        // println!("Trying {:?}", guess);
-        let tests = real_word.test(guess);
-        // println!("{}", tests.iter().map(|t| match t {
-        //     Test::Green => '🟩',
-        //     Test::Yellow => '🟨',
-        //     Test::Gray => '⬛'
-        // }).collect::<String>());
-        if tests.iter().all(|item| item == &Test::Green) {
-            // println!("{:?} is correct!", guess);
-            break
-        }
-        let eliminated = guesser.try_word(guess, tests);
-        // println!("Eliminated {} words, {} words remaining", eliminated, guesser.get_possible().len());
-    };
-    return i;
-}
-
-fn algo_v2(mut guesser: WordleGuesser, real_word: Word) -> usize {
-    let mut i = 0;
-    loop {
-        i += 1;
-        let Some(guess) = guesser.get_best_guess() else { break };
-        // println!("Trying {:?}", guess);
-        let tests = real_word.test(guess);
-        // println!("{}", tests.iter().map(|t| match t {
-        //     Test::Green => '🟩',
-        //     Test::Yellow => '🟨',
-        //     Test::Gray => '⬛'
-        // }).collect::<String>());
-        if tests.iter().all(|item| item == &Test::Green) {
-            // println!("{:?} is correct!", guess);
-            break
-        }
-        let eliminated = guesser.try_word(guess, tests);
-        // println!("Eliminated {} words, {} words remaining", eliminated, guesser.get_possible().len());
-    };
-    return i;
-}
-
 fn main() {
-    test_algo(algo_v1, 150);
-    test_algo(algo_v2, 150);
+    let words = Word::list_from_file("src/all_words.txt");
+
+    test_solver(|| SolverV1::from_words(words.clone()), words.iter().copied().step_by(200));
+    test_solver(|| SolverV2::from_words(words.clone()), words.iter().copied().step_by(200));
+    test_solver(|| SolverV3::from_words(words.clone()), words.iter().copied().step_by(200));
 
     // let real_word = Word::new(['m', 'a', 'h', 'a', 'l']);
     // let mut guesser = WordleGuesser::from_words_file("src/all_words.txt");
