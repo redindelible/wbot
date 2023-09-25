@@ -28,9 +28,9 @@ impl Solver for SolverV3 {
         self.guesser.try_word(guess, results)
     }
 
-    fn get_guess(&self) -> Result<Word, Word> {
+    fn get_guess(&self) -> Word {
         if self.guesser.get_possible().len() == 1 {
-            return Err(*self.guesser.get_possible().last().unwrap())
+            return *self.guesser.get_possible().last().unwrap()
         }
 
         let count = self.guesser.get_possible().len();
@@ -59,6 +59,6 @@ impl Solver for SolverV3 {
             score
         }).unwrap();
 
-        Ok(*best)
+        *best
     }
 }

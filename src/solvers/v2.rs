@@ -26,13 +26,14 @@ impl Solver for SolverV2 {
         self.guesser.try_word(guess, results)
     }
 
-    fn get_guess(&self) -> Result<Word, Word> {
+    fn get_guess(&self) -> Word {
         if self.guesser.get_possible().len() == 1 {
-            return Err(*self.guesser.get_possible().last().unwrap())
+            return *self.guesser.get_possible().last().unwrap()
         }
-        if self.guesser.get_possible().len() <= 10 {
-            return Ok(*self.guesser.get_possible().last().unwrap());
-        }
+        let mut characters_set: HashSet<char> = self.guesser.get_possible().first().unwrap().word.iter().copied().collect();
+        if self.guesser.get_possible().iter().skip(1).all(|guess| guess.word.iter().all(|c| characters_set.contains(c))) {
+            return *self.guesser.get_possible().last().unwrap()
+        };
         let mut alphabet: HashMap<char, usize> = HashMap::new();
         for possible_word in self.guesser.get_possible() {
             for chr in possible_word.word {
@@ -43,6 +44,6 @@ impl Solver for SolverV2 {
         let best_guess = self.all_possible_guesses.iter().max_by_key(|&guess| {
             guess.word.iter().collect::<HashSet<&char>>().iter().map(|l| alphabet.get(l).copied().unwrap_or(0)).sum::<usize>()
         });
-        Ok(*best_guess.unwrap())
+        *best_guess.unwrap()
     }
 }

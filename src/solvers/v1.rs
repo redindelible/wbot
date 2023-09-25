@@ -23,11 +23,11 @@ impl Solver for SolverV1 {
         self.guesser.try_word(guess, results)
     }
 
-    fn get_guess(&self) -> Result<Word, Word> {
+    fn get_guess(&self) -> Word {
         if self.guesser.get_possible().len() == 1 {
-            Err(*self.guesser.get_possible().first().unwrap())
+            *self.guesser.get_possible().first().unwrap()
         } else {
-            Ok(*self.guesser.get_possible().first().unwrap())
+            *self.guesser.get_possible().first().unwrap()
         }
     }
 }
